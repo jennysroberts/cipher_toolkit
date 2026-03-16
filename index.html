@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Cipher — a browser-based security toolkit covering password analysis, cryptographic hashing, classical ciphers, data encoding and URL auditing. Built as a portfolio project while studying for CompTIA Security+.">
+<title>Cipher — Security Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Variables ─────────────────────────────────── */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --void:        #02030a;
+  --space:       #060916;
+  --nebula-dk:   #0b1225;
+  --nebula:      #111c38;
+  --border:      #1f3158;
+  --border2:     #2a4170;
+  --starlight:   #e8f2ff;
+  --star-dim:    #aac6e8;
+  --star-faint:  #5c7faa;
+  --star-ghost:  #3a5580;
+  --gold:        #f5c842;
+  --gold-dim:    #b8922e;
+  --gold-pale:   rgba(245,200,66,.10);
+  --gold-ring:   rgba(245,200,66,.20);
+  --teal:        #38c4d4;
+  --teal-pale:   rgba(56,196,212,.08);
+  --red:         #d45252;
+  --red-pale:    rgba(212,82,82,.08);
+  --nasa:        'Orbitron', sans-serif;
+  --mono:        'IBM Plex Mono', monospace;
+}
+
+/* ── Skip link for keyboard users ─────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--gold);
+  color: var(--void);
+  font-family: var(--nasa);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  z-index: 9999;
+  text-decoration: none;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.skip-link:focus { top: 1rem; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--void);
+  color: var(--star-dim);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Star field ────────────────────────────────────────── */
+#stars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  aria-hidden: true;
+}
+
+/* ── Nebula glows ──────────────────────────────────────── */
+.nebula-glow {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(90px);
+}
+.ng1 { width:600px; height:400px; top:-10%; left:-10%; background:radial-gradient(ellipse, rgba(139,108,219,.07) 0%, transparent 70%); }
+.ng2 { width:500px; height:500px; bottom:10%; right:-5%; background:radial-gradient(ellipse, rgba(56,196,212,.06) 0%, transparent 70%); }
+.ng3 { width:400px; height:300px; top:40%; left:30%; background:radial-gradient(ellipse, rgba(245,200,66,.04) 0%, transparent 70%); }
+
+/* ── Page layout ───────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Sidebar / aside ───────────────────────────────────── */
+.sidebar {
+  background: rgba(6,9,22,.92);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: .4;
+}
+
+/* ── Brand header ──────────────────────────────────────── */
+.brand-header {
+  padding: 34px 26px 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.brand-hex { width: 32px; height: 32px; flex-shrink: 0; }
+.brand-hex svg { width: 32px; height: 32px; }
+
+.brand-name {
+  font-family: var(--nasa);
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(245,200,66,.7), 0 0 40px rgba(245,200,66,.3);
+}
+
+.brand-sub {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--star-faint);
+  text-transform: uppercase;
+  margin-top: 9px;
+  padding-left: 45px;
+  font-weight: 400;
+}
+
+/* ── Navigation ────────────────────────────────────────── */
+.site-nav {
+  padding: 16px 0;
+  flex: 1;
+  overflow-y: auto;
+}
+.site-nav::-webkit-scrollbar { width: 2px; }
+.site-nav::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.nav-group-label {
+  font-family: var(--nasa);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--star-faint);
+  text-transform: uppercase;
+  padding: 0 26px;
+  margin: 16px 0 6px;
+}
+
+.nav-list { list-style: none; }
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 26px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  color: var(--star-dim);
+  font-family: var(--mono);
+  transition: all .18s;
+  position: relative;
+}
+
+.nav-link:hover,
+.nav-link:focus-visible {
+  background: var(--gold-pale);
+  color: var(--starlight);
+  outline: none;
+}
+
+.nav-link[aria-selected="true"] {
+  border-left: 2px solid var(--gold);
+  background: var(--gold-pale);
+  color: var(--gold);
+}
+
+.nav-link[aria-selected="true"]::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 1px;
+  background: var(--gold);
+  opacity: .3;
+}
+
+.nav-num {
+  font-family: var(--nasa);
+  font-size: 11px;
+  color: var(--star-faint);
+  width: 20px;
+  flex-shrink: 0;
+  letter-spacing: 1px;
+}
+.nav-link[aria-selected="true"] .nav-num { color: var(--gold); }
+
+.nav-text {
+  font-family: var(--nasa);
+  font-size: 11px;
+  letter-spacing: 1px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.nav-link[aria-selected="true"] .nav-text {
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(245,200,66,.4);
+}
+.nav-link:hover .nav-text { color: var(--starlight); }
+
+.nav-arrow {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--star-ghost);
+  opacity: 0;
+  transition: opacity .18s;
+}
+.nav-link[aria-selected="true"] .nav-arrow,
+.nav-link:hover .nav-arrow { opacity: 1; color: var(--gold); }
+
+/* ── Sidebar footer ────────────────────────────────────── */
+.sidebar-footer {
+  padding: 20px 26px;
+  border-top: 1px solid var(--border);
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--star-faint);
+  margin-bottom: 5px;
+}
+
+.status-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sidebar-note {
+  margin-top: 12px;
+  font-size: 10px;
+  color: var(--star-ghost);
+  line-height: 1.7;
+  font-style: italic;
+}
+
+/* ── Main content area ─────────────────────────────────── */
+.content-area {
+  padding: 50px 58px;
+  max-width: 820px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Panels / sections ─────────────────────────────────── */
+.tool-panel { display: none; }
+.tool-panel[aria-hidden="false"] {
+  display: block;
+  animation: rise .3s cubic-bezier(.22,1,.36,1);
+}
+
+/* ── Panel header ──────────────────────────────────────── */
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 40px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.panel-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0;
+  width: 80px; height: 1px;
+  background: var(--gold);
+  opacity: .7;
+}
+
+.panel-eyebrow {
+  font-family: var(--nasa);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  opacity: .9;
+}
+
+.panel-title {
+  font-family: var(--nasa);
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--starlight);
+  line-height: 1.2;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(245,200,66,.35), 0 0 60px rgba(245,200,66,.12), 0 2px 4px rgba(0,0,0,.8);
+}
+
+.panel-num {
+  font-family: var(--nasa);
+  font-size: 72px;
+  font-weight: 900;
+  color: transparent;
+  line-height: 1;
+  letter-spacing: -2px;
+  user-select: none;
+  flex-shrink: 0;
+  -webkit-text-stroke: 1px var(--border2);
+  text-shadow: 0 0 30px rgba(56,196,212,.12);
+}
+
+/* ── Form fields ───────────────────────────────────────── */
+.field { margin-bottom: 18px; }
+
+.field-label {
+  display: block;
+  font-family: var(--nasa);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--star-dim);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  background: rgba(11,18,37,.8);
+  border: 1px solid var(--border);
+  color: var(--starlight);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 11px 15px;
+  outline: none;
+  border-radius: 0;
+  transition: border-color .2s, box-shadow .2s;
+  backdrop-filter: blur(4px);
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 0 3px var(--gold-ring), 0 0 20px rgba(245,200,66,.06);
+}
+
+textarea { resize: vertical; min-height: 96px; line-height: 1.7; }
+select option { background: var(--nebula-dk); }
+input[type="number"]::-webkit-inner-spin-button { opacity: .3; }
+
+/* ── Buttons ───────────────────────────────────────────── */
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+
+.btn {
+  font-family: var(--nasa);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 11px 22px;
+  cursor: pointer;
+  border-radius: 0;
+  transition: all .18s;
+}
+.btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.btn:active { transform: scale(.98); }
+
+.btn-primary {
+  background: var(--gold);
+  border: 1px solid var(--gold);
+  color: var(--void);
+}
+.btn-primary:hover { background: #f7d060; box-shadow: 0 0 24px rgba(245,200,66,.30); }
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--star-faint);
+}
+.btn-ghost:hover { border-color: var(--gold-dim); color: var(--gold); background: var(--gold-pale); }
+
+/* ── Output boxes ──────────────────────────────────────── */
+.output-box {
+  background: rgba(11,18,37,.7);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--gold-dim);
+  padding: 18px;
+  position: relative;
+  min-height: 58px;
+  backdrop-filter: blur(8px);
+}
+
+.output-label {
+  font-family: var(--nasa);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--star-faint);
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+
+.output-value {
+  color: var(--starlight);
+  font-size: 12.5px;
+  word-break: break-all;
+  line-height: 1.8;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 11px; right: 11px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--star-faint);
+  font-family: var(--nasa);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.copy-btn:hover { color: var(--gold); border-color: var(--gold-dim); }
+.copy-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ── Password panel ────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin: 18px 0;
+}
+
+.stat-cell {
+  background: rgba(11,18,37,.8);
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: var(--nasa);
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 6px;
+  text-shadow: 0 0 14px rgba(245,200,66,.4);
+}
+
+.stat-label {
+  font-family: var(--nasa);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--star-dim);
+  text-transform: uppercase;
+}
+
+.strength-track {
+  height: 2px;
+  background: var(--border);
+  margin: 18px 0 7px;
+}
+
+.strength-fill {
+  height: 100%;
+  width: 0;
+  transition: width .6s cubic-bezier(.22,1,.36,1), background .4s;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.strength-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.strength-word {
+  font-family: var(--nasa);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+
+.strength-pct {
+  font-size: 11px;
+  color: var(--star-dim);
+  font-family: var(--nasa);
+  letter-spacing: 1px;
+}
+
+.checks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-bottom: 18px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--star-dim);
+  padding: 8px 11px;
+  background: rgba(11,18,37,.5);
+  border: 1px solid var(--border);
+  transition: all .2s;
+}
+
+.check-item.pass {
+  color: var(--star-dim);
+  border-color: rgba(56,196,212,.25);
+  background: var(--teal-pale);
+}
+
+.check-icon {
+  width: 14px; height: 14px;
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  transition: all .2s;
+}
+
+.check-item.pass .check-icon {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--void);
+}
+
+.feedback-panel {
+  background: rgba(245,200,66,.04);
+  border: 1px solid rgba(245,200,66,.15);
+  padding: 15px 17px;
+  font-size: 12px;
+  color: var(--star-dim);
+  line-height: 1.9;
+  display: none;
+}
+.feedback-panel.show { display: block; }
+
+/* ── Hash panel ────────────────────────────────────────── */
+.hash-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); }
+
+.hash-row {
+  background: rgba(11,18,37,.8);
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.hash-algorithm {
+  font-family: var(--nasa);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--star-dim);
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.algo-badge {
+  font-family: var(--nasa);
+  font-size: 10px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 1px;
+  align-self: flex-start;
+}
+
+.badge-secure { background: var(--teal-pale); color: var(--teal); border: 1px solid rgba(56,196,212,.25); }
+.badge-broken  { background: var(--red-pale);  color: var(--red);  border: 1px solid rgba(212,82,82,.2); }
+
+.hash-value {
+  font-size: 10.5px;
+  color: var(--star-dim);
+  word-break: break-all;
+  line-height: 1.5;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: .3px;
+}
+
+.hash-copy-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--star-faint);
+  font-family: var(--nasa);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.hash-copy-btn:hover { color: var(--gold); border-color: var(--gold-dim); }
+.hash-copy-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ── Note / context box ────────────────────────────────── */
+.context-note {
+  margin-top: 14px;
+  padding: 13px 15px;
+  background: rgba(11,18,37,.5);
+  border-left: 2px solid var(--border2);
+  font-size: 12px;
+  color: var(--star-dim);
+  line-height: 1.8;
+}
+
+/* ── Two column layout ─────────────────────────────────── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+/* ── URL panel ─────────────────────────────────────────── */
+.url-parsed-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin: 18px 0;
+}
+
+.url-cell { background: rgba(11,18,37,.8); padding: 11px 15px; }
+
+.url-cell-key {
+  font-family: var(--nasa);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--star-faint);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.url-cell-val { font-size: 12px; color: var(--star-dim); word-break: break-all; }
+
+.flags-list { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; }
+
+.flag-item {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  padding: 12px 15px;
+  border: 1px solid var(--border);
+  background: rgba(11,18,37,.6);
+}
+
+.flag-item.ok   { border-left: 2px solid var(--teal); }
+.flag-item.warn { border-left: 2px solid var(--gold-dim); }
+.flag-item.bad  { border-left: 2px solid var(--red); }
+
+.flag-icon  { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+
+.flag-title {
+  font-family: var(--nasa);
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--starlight);
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.flag-desc { font-size: 12px; color: var(--star-dim); line-height: 1.6; }
+
+/* ── About panel ───────────────────────────────────────── */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.about-card {
+  background: rgba(11,18,37,.7);
+  border: 1px solid var(--border);
+  padding: 22px;
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+}
+
+.about-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold) 0%, transparent 60%);
+  opacity: .3;
+}
+
+.about-card.wide { grid-column: 1 / -1; }
+
+.card-eyebrow {
+  font-family: var(--nasa);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  opacity: .9;
+}
+
+.about-card h3 {
+  font-family: var(--nasa);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--starlight);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  text-shadow: 0 0 16px rgba(232,242,255,.2);
+}
+
+.about-card p {
+  font-size: 12px;
+  color: var(--star-dim);
+  line-height: 1.85;
+  margin-bottom: 10px;
+}
+
+.about-card p:last-child { margin-bottom: 0; }
+
+.detail-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.detail-list li {
+  font-size: 12px;
+  color: var(--star-dim);
+  padding-left: 16px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.detail-list li::before {
+  content: '›';
+  position: absolute;
+  left: 0;
+  color: var(--gold-dim);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.detail-list li strong { color: var(--star-dim); }
+
+.usage-steps {
+  counter-reset: steps;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.usage-steps li {
+  counter-increment: steps;
+  font-size: 12px;
+  color: var(--star-dim);
+  padding-left: 28px;
+  position: relative;
+  line-height: 1.7;
+}
+
+.usage-steps li::before {
+  content: counter(steps);
+  position: absolute;
+  left: 0;
+  font-family: var(--nasa);
+  font-size: 10px;
+  color: var(--gold);
+  background: rgba(245,200,66,.1);
+  border: 1px solid rgba(245,200,66,.2);
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  top: 1px;
+}
+
+/* ── Animations ────────────────────────────────────────── */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 740px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .content-area { padding: 28px 22px; }
+  .stats-grid, .two-col, .about-grid, .url-parsed-grid, .checks-grid { grid-template-columns: 1fr; }
+  .panel-num { display: none; }
+  .hash-row { grid-template-columns: 80px 1fr; }
+  .hash-copy-btn { display: none; }
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--space); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+</style>
+</head>
+<body>
+
+<!-- Skip to content for keyboard/screen reader users -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Decorative background elements (hidden from assistive tech) -->
+<canvas id="stars" aria-hidden="true"></canvas>
+<div class="nebula-glow ng1" aria-hidden="true"></div>
+<div class="nebula-glow ng2" aria-hidden="true"></div>
+<div class="nebula-glow ng3" aria-hidden="true"></div>
+
+<div class="layout">
+
+  <!-- ── Sidebar ──────────────────────────────────────── -->
+  <aside class="sidebar" aria-label="Site navigation">
+
+    <header class="brand-header">
+      <div class="brand-lockup">
+        <div class="brand-hex" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cipher hexagon logo mark">
+            <polygon points="16,2 28,9 28,23 16,30 4,23 4,9" stroke="#f5c842" stroke-width="1.5" fill="none" opacity="0.8"/>
+            <polygon points="16,8 23,12 23,20 16,24 9,20 9,12" stroke="#f5c842" stroke-width="1" fill="rgba(245,200,66,0.08)" opacity="0.6"/>
+            <circle cx="16" cy="16" r="2.5" fill="#f5c842" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="brand-name">Cipher</span>
+      </div>
+      <p class="brand-sub">Security Toolkit · v1.0</p>
+    </header>
+
+    <nav class="site-nav" aria-label="Tool navigation">
+      <p class="nav-group-label" id="nav-tools-label">Modules</p>
+      <ul class="nav-list" role="tablist" aria-labelledby="nav-tools-label">
+        <li role="presentation">
+          <button class="nav-link" role="tab" aria-selected="true" aria-controls="tab-password" data-tab="password">
+            <span class="nav-num" aria-hidden="true">01</span>
+            <span class="nav-text">Password Analyser</span>
+            <span class="nav-arrow" aria-hidden="true">›</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-link" role="tab" aria-selected="false" aria-controls="tab-hash" data-tab="hash">
+            <span class="nav-num" aria-hidden="true">02</span>
+            <span class="nav-text">Hash Generator</span>
+            <span class="nav-arrow" aria-hidden="true">›</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-link" role="tab" aria-selected="false" aria-controls="tab-cipher" data-tab="cipher">
+            <span class="nav-num" aria-hidden="true">03</span>
+            <span class="nav-text">Caesar Cipher</span>
+            <span class="nav-arrow" aria-hidden="true">›</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-link" role="tab" aria-selected="false" aria-controls="tab-encoder" data-tab="encoder">
+            <span class="nav-num" aria-hidden="true">04</span>
+            <span class="nav-text">Encoding Suite</span>
+            <span class="nav-arrow" aria-hidden="true">›</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-link" role="tab" aria-selected="false" aria-controls="tab-url" data-tab="url">
+            <span class="nav-num" aria-hidden="true">05</span>
+            <span class="nav-text">URL Auditor</span>
+            <span class="nav-arrow" aria-hidden="true">›</span>
+          </button>
+        </li>
+      </ul>
+      <p class="nav-group-label" id="nav-info-label">Info</p>
+      <ul class="nav-list" role="tablist" aria-labelledby="nav-info-label">
+        <li role="presentation">
+          <button class="nav-link" role="tab" aria-selected="false" aria-controls="tab-about" data-tab="about">
+            <span class="nav-num" aria-hidden="true">06</span>
+            <span class="nav-text">About</span>
+            <span class="nav-arrow" aria-hidden="true">›</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+
+    <footer class="sidebar-footer">
+      <p class="status-row">
+        <span class="status-dot" style="background:var(--teal);" aria-hidden="true"></span>
+        All processing is local
+      </p>
+      <p class="status-row">
+        <span class="status-dot" style="background:var(--gold);" aria-hidden="true"></span>
+        No data transmitted
+      </p>
+      <p class="sidebar-note">Built while studying<br>for CompTIA Security+</p>
+    </footer>
+
+  </aside>
+
+  <!-- ── Main content ──────────────────────────────────── -->
+  <main id="main-content" class="content-area">
+
+    <!-- ── 01 Password Analyser ─────────────────────────── -->
+    <section
+      class="tool-panel"
+      id="tab-password"
+      role="tabpanel"
+      aria-labelledby="tab-password-heading"
+      aria-hidden="false"
+    >
+      <header class="panel-header">
+        <div>
+          <p class="panel-eyebrow">Module 01 · Security</p>
+          <h1 class="panel-title" id="tab-password-heading">Password<br>Analyser</h1>
+        </div>
+        <span class="panel-num" aria-hidden="true">01</span>
+      </header>
+
+      <div class="field">
+        <label class="field-label" for="pw-input">Password Input</label>
+        <input
+          type="text"
+          id="pw-input"
+          name="password"
+          placeholder="Type or paste a password…"
+          autocomplete="off"
+          spellcheck="false"
+          aria-describedby="pw-strength-desc"
+        >
+      </div>
+
+      <div class="strength-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Password strength">
+        <div class="strength-fill" id="strength-fill"></div>
+      </div>
+      <div class="strength-meta">
+        <span class="strength-word" id="strength-word" style="color:var(--star-ghost)" aria-live="polite">——</span>
+        <span class="strength-pct" id="strength-pct" aria-live="polite"></span>
+      </div>
+
+      <p id="pw-strength-desc" class="sr-only" aria-live="polite"></p>
+
+      <div class="stats-grid" aria-label="Password statistics">
+        <div class="stat-cell">
+          <div class="stat-value" id="stat-entropy">0</div>
+          <div class="stat-label">Entropy Bits</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" id="stat-length">0</div>
+          <div class="stat-label">Length</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" id="stat-charset">0</div>
+          <div class="stat-label">Charset</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" id="stat-crack" style="font-size:16px">——</div>
+          <div class="stat-label">Crack Est.</div>
+        </div>
+      </div>
+
+      <ul class="checks-grid" aria-label="Password requirement checks" role="list">
+        <li class="check-item" id="ck-len"  role="listitem"><span class="check-icon" aria-hidden="true"></span>12+ characters</li>
+        <li class="check-item" id="ck-upper" role="listitem"><span class="check-icon" aria-hidden="true"></span>Uppercase letter</li>
+        <li class="check-item" id="ck-lower" role="listitem"><span class="check-icon" aria-hidden="true"></span>Lowercase letter</li>
+        <li class="check-item" id="ck-num"  role="listitem"><span class="check-icon" aria-hidden="true"></span>Number</li>
+        <li class="check-item" id="ck-sym"  role="listitem"><span class="check-icon" aria-hidden="true"></span>Special symbol</li>
+        <li class="check-item" id="ck-seq"  role="listitem"><span class="check-icon" aria-hidden="true"></span>No keyboard sequences</li>
+        <li class="check-item" id="ck-rep"  role="listitem"><span class="check-icon" aria-hidden="true"></span>No repeated characters</li>
+        <li class="check-item" id="ck-com"  role="listitem"><span class="check-icon" aria-hidden="true"></span>Not a common password</li>
+      </ul>
+
+      <div class="feedback-panel" id="pw-feedback" role="alert" aria-live="polite">
+        <span id="pw-feedback-text"></span>
+      </div>
+    </section>
+
+    <!-- ── 02 Hash Generator ─────────────────────────────── -->
+    <section
+      class="tool-panel"
+      id="tab-hash"
+      role="tabpanel"
+      aria-labelledby="tab-hash-heading"
+      aria-hidden="true"
+    >
+      <header class="panel-header">
+        <div>
+          <p class="panel-eyebrow">Module 02 · Cryptography</p>
+          <h1 class="panel-title" id="tab-hash-heading">Hash<br>Generator</h1>
+        </div>
+        <span class="panel-num" aria-hidden="true">02</span>
+      </header>
+
+      <div class="field">
+        <label class="field-label" for="hash-input">Input Text</label>
+        <textarea
+          id="hash-input"
+          name="hash-text"
+          placeholder="Enter any text to generate cryptographic hashes…"
+          spellcheck="false"
+          aria-describedby="hash-hint"
+        ></textarea>
+        <p id="hash-hint" class="sr-only">Generates MD5, SHA-1, and SHA-256 hashes of your input text.</p>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-hash">Generate Hashes</button>
+        <button class="btn btn-ghost" id="btn-hash-clear">Clear</button>
+      </div>
+
+      <div id="hash-output" hidden aria-live="polite">
+        <div class="hash-list" id="hash-rows" role="list" aria-label="Generated hash values"></div>
+        <aside class="context-note">
+          <strong style="color:var(--star-dim)">SHA-256</strong> is the current standard — collision-resistant, used in TLS, code signing, and blockchains.
+          <strong style="color:var(--red)">MD5</strong> and <strong style="color:var(--red)">SHA-1</strong> are cryptographically broken and shown here for educational comparison only.
+        </aside>
+      </div>
+    </section>
+
+    <!-- ── 03 Caesar Cipher ──────────────────────────────── -->
+    <section
+      class="tool-panel"
+      id="tab-cipher"
+      role="tabpanel"
+      aria-labelledby="tab-cipher-heading"
+      aria-hidden="true"
+    >
+      <header class="panel-header">
+        <div>
+          <p class="panel-eyebrow">Module 03 · Classical Cryptography</p>
+          <h1 class="panel-title" id="tab-cipher-heading">Caesar<br>Cipher</h1>
+        </div>
+        <span class="panel-num" aria-hidden="true">03</span>
+      </header>
+
+      <div class="two-col">
+        <div>
+          <div class="field">
+            <label class="field-label" for="cipher-input">Plaintext</label>
+            <textarea
+              id="cipher-input"
+              name="cipher-text"
+              placeholder="Enter text to encrypt or decrypt…"
+              spellcheck="false"
+              style="min-height:110px;"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="cipher-shift">Shift Amount (1–25)</label>
+            <input
+              type="number"
+              id="cipher-shift"
+              name="cipher-shift"
+              value="13"
+              min="1"
+              max="25"
+              aria-describedby="shift-hint"
+            >
+            <p id="shift-hint" class="sr-only">A shift of 13 is ROT13, which is its own inverse.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btn-cipher-enc">Encrypt →</button>
+            <button class="btn btn-ghost"   id="btn-cipher-dec">← Decrypt</button>
+            <button class="btn btn-ghost"   id="btn-rot13">ROT13</button>
+          </div>
+        </div>
+        <div>
+          <div class="output-box" style="min-height:200px;">
+            <p class="output-label">Output</p>
+            <p class="output-value" id="cipher-output" aria-live="polite">——</p>
+            <button class="copy-btn" id="btn-copy-cipher" aria-label="Copy cipher output">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="context-note">
+        <strong style="color:var(--star-dim)">Historical context:</strong> Used by Julius Caesar around 100 BC to protect military communications. ROT13 (shift=13) is its own inverse — applying it twice returns the original text. Both are trivially broken by frequency analysis, making them foundational examples of why substitution alone is insufficient in modern cryptography.
+      </aside>
+    </section>
+
+    <!-- ── 04 Encoding Suite ─────────────────────────────── -->
+    <section
+      class="tool-panel"
+      id="tab-encoder"
+      role="tabpanel"
+      aria-labelledby="tab-encoder-heading"
+      aria-hidden="true"
+    >
+      <header class="panel-header">
+        <div>
+          <p class="panel-eyebrow">Module 04 · Data Encoding</p>
+          <h1 class="panel-title" id="tab-encoder-heading">Encoding<br>Suite</h1>
+        </div>
+        <span class="panel-num" aria-hidden="true">04</span>
+      </header>
+
+      <div class="field">
+        <label class="field-label" for="encode-input">Input</label>
+        <textarea
+          id="encode-input"
+          name="encode-text"
+          placeholder="Enter text to encode or decode…"
+          spellcheck="false"
+        ></textarea>
+      </div>
+
+      <div class="two-col" style="margin-bottom:18px;">
+        <div class="field" style="margin-bottom:0;">
+          <label class="field-label" for="encode-type">Operation</label>
+          <select id="encode-type" name="encode-type">
+            <option value="b64e">Base64 — Encode</option>
+            <option value="b64d">Base64 — Decode</option>
+            <option value="urle">URL Encode</option>
+            <option value="urld">URL Decode</option>
+            <option value="hex">Text → Hex</option>
+            <option value="unhex">Hex → Text</option>
+            <option value="bin">Text → Binary</option>
+            <option value="unbin">Binary → Text</option>
+            <option value="ascii">Text → ASCII Codes</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:8px;">
+          <button class="btn btn-primary" id="btn-encode" style="flex:1;">Convert</button>
+          <button class="btn btn-ghost"   id="btn-swap-io">Swap</button>
+        </div>
+      </div>
+
+      <div class="output-box">
+        <p class="output-label">Result</p>
+        <p class="output-value" id="encode-output" aria-live="polite">——</p>
+        <button class="copy-btn" id="btn-copy-encode" aria-label="Copy encoded output">Copy</button>
+      </div>
+
+      <aside class="context-note" style="margin-top:14px;">
+        <strong style="color:var(--star-dim)">CTF tip:</strong> Base64 padding <code style="color:var(--gold)">==</code>, hex strings, and URL-encoded payloads appear constantly in web security challenges and CTF competitions. Remember — encoding is <em>not</em> encryption and provides zero confidentiality.
+      </aside>
+    </section>
+
+    <!-- ── 05 URL Auditor ────────────────────────────────── -->
+    <section
+      class="tool-panel"
+      id="tab-url"
+      role="tabpanel"
+      aria-labelledby="tab-url-heading"
+      aria-hidden="true"
+    >
+      <header class="panel-header">
+        <div>
+          <p class="panel-eyebrow">Module 05 · Web Security</p>
+          <h1 class="panel-title" id="tab-url-heading">URL<br>Auditor</h1>
+        </div>
+        <span class="panel-num" aria-hidden="true">05</span>
+      </header>
+
+      <div class="field">
+        <label class="field-label" for="url-input">Target URL</label>
+        <input
+          type="text"
+          id="url-input"
+          name="url"
+          placeholder="https://example.com/path?param=value"
+          aria-describedby="url-hint"
+        >
+        <p id="url-hint" class="sr-only">Paste a URL to inspect its structure and flag potential security issues.</p>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-audit-url">Audit URL</button>
+        <button class="btn btn-ghost"   id="btn-sample-safe">Safe sample</button>
+        <button class="btn btn-ghost"   id="btn-sample-sus">Suspicious sample</button>
+      </div>
+
+      <div id="url-results" hidden aria-live="polite">
+        <div class="url-parsed-grid" id="url-parsed-grid" role="list" aria-label="Parsed URL components"></div>
+        <div class="flags-list"      id="url-flags-list"  role="list" aria-label="Security flags"></div>
+      </div>
+    </section>
+
+    <!-- ── 06 About ──────────────────────────────────────── -->
+    <section
+      class="tool-panel"
+      id="tab-about"
+      role="tabpanel"
+      aria-labelledby="tab-about-heading"
+      aria-hidden="true"
+    >
+      <header class="panel-header">
+        <div>
+          <p class="panel-eyebrow">Project Info</p>
+          <h1 class="panel-title" id="tab-about-heading">About<br>Cipher</h1>
+        </div>
+        <span class="panel-num" aria-hidden="true">06</span>
+      </header>
+
+      <div class="about-grid">
+
+        <article class="about-card wide">
+          <p class="card-eyebrow">What Is This</p>
+          <h2>A Browser-Based Security Toolkit</h2>
+          <p>
+            Cipher is a collection of five interactive security utilities built entirely from scratch — no frameworks,
+            no external dependencies, no data ever leaves your browser. Every calculation runs locally using native
+            Web APIs. It was developed as a hands-on portfolio project to reinforce the theory studied whilst
+            working towards CompTIA Security+ certification.
+          </p>
+          <p>
+            The project is intentionally transparent: all source code is visible, readable, and commented so that
+            other learners can follow along, identify mistakes, or build on top of it. Constructive feedback
+            is always welcome.
+          </p>
+        </article>
+
+        <article class="about-card">
+          <p class="card-eyebrow">How to Use It</p>
+          <h2>Getting Started</h2>
+          <ol class="usage-steps">
+            <li>Select a module from the navigation on the left.</li>
+            <li>Enter your input into the provided field.</li>
+            <li>Click the primary action button to run the tool.</li>
+            <li>Review the output and any contextual notes below the result.</li>
+            <li>Use the <strong>Copy</strong> button to copy results to your clipboard.</li>
+          </ol>
+          <p style="margin-top:12px;">All tools work offline — no internet connection required after the page loads.</p>
+        </article>
+
+        <article class="about-card">
+          <p class="card-eyebrow">Concepts Covered</p>
+          <h2>Technical Skills</h2>
+          <ul class="detail-list">
+            <li><strong>Cryptographic hashing</strong> — MD5, SHA-1, SHA-256 via the Web Crypto API; understanding collision resistance and real-world use cases.</li>
+            <li><strong>Password entropy</strong> — Based on NIST SP 800-63B guidelines; charset analysis and crack-time estimation at 10 billion guesses per second.</li>
+            <li><strong>Classical ciphers</strong> — Caesar cipher and ROT13; substitution weaknesses and frequency analysis.</li>
+            <li><strong>Encoding formats</strong> — Base64, URL encoding, hexadecimal, binary. Encoding ≠ encryption.</li>
+            <li><strong>URL structure auditing</strong> — Protocol inspection, homograph detection, open redirect indicators, and suspicious parameter names.</li>
+          </ul>
+        </article>
+
+        <article class="about-card">
+          <p class="card-eyebrow">Stack</p>
+          <h2>Built With</h2>
+          <ul class="detail-list">
+            <li><strong>Vanilla HTML5 / CSS3 / JavaScript (ES2020+)</strong> — no build tools or frameworks</li>
+            <li><strong>Web Crypto API</strong> — SubtleCrypto for SHA-1 and SHA-256</li>
+            <li><strong>Canvas API</strong> — procedural star field background</li>
+            <li><strong>Orbitron + IBM Plex Mono</strong> — loaded via Google Fonts</li>
+            <li><strong>Semantic HTML + ARIA</strong> — accessible tab interface and live regions</li>
+            <li><strong>Zero external dependencies</strong> — fully self-contained single file</li>
+          </ul>
+        </article>
+
+        <article class="about-card wide">
+          <p class="card-eyebrow">Learning Path</p>
+          <h2>Currently Studying</h2>
+          <p>
+            Working through networking fundamentals, the OWASP Top 10, penetration testing methodology,
+            and actively participating in CTF (Capture the Flag) competitions. Currently pursuing
+            CompTIA Security+ certification as the first formal qualification in a planned pathway
+            through cybersecurity.
+          </p>
+          <p>
+            This toolkit is a deliberate exercise in learning by building. Reading theory is necessary —
+            but implementing it in code forces a deeper understanding of why certain approaches work
+            and others fail. Future modules may include a port scanner visualiser, a basic XSS
+            playground, or a network packet breakdown tool.
+          </p>
+          <p>
+            Open to connecting with others in the security community, junior security analyst roles,
+            and SOC analyst opportunities across Australia.
+          </p>
+        </article>
+
+        <article class="about-card wide">
+          <p class="card-eyebrow">Disclaimer</p>
+          <h2>Educational Use Only</h2>
+          <p>
+            This toolkit is designed solely for learning and demonstration purposes. The hashing,
+            encoding, and analysis tools are not intended for use in production systems. Always use
+            established, audited libraries and frameworks when building real-world security tooling.
+            Never test tools against systems you do not own or have explicit written permission to
+            analyse.
+          </p>
+        </article>
+
+      </div>
+    </section>
+
+  </main>
+</div><!-- /.layout -->
+
+<!-- Screen reader only utility class -->
+<style>
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+</style>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   CIPHER — Security Toolkit
+   All event listeners are attached here, not inline HTML.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Star field ───────────────────────────────────────── */
+(function initStarField() {
+  const canvas = document.getElementById('stars');
+  const ctx    = canvas.getContext('2d');
+  let   stars  = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    buildStars();
+  }
+
+  function buildStars() {
+    stars = [];
+    const count = Math.floor((canvas.width * canvas.height) / 4000);
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x:     Math.random() * canvas.width,
+        y:     Math.random() * canvas.height,
+        r:     Math.random() * 1.2 + 0.2,
+        alpha: Math.random(),
+        delta: (Math.random() - 0.5) * 0.003,
+        gold:  Math.random() > 0.8
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      s.alpha += s.delta;
+      if (s.alpha <= 0 || s.alpha >= 1) s.delta *= -1;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = s.gold
+        ? `rgba(245,200,66,${s.alpha.toFixed(2)})`
+        : `rgba(180,210,255,${s.alpha.toFixed(2)})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  draw();
+})();
+
+/* ── Tab navigation ───────────────────────────────────── */
+(function initNavigation() {
+  const navButtons = document.querySelectorAll('.nav-link[role="tab"]');
+  const panels     = document.querySelectorAll('.tool-panel[role="tabpanel"]');
+
+  function switchTab(targetTab) {
+    navButtons.forEach(btn => {
+      const isTarget = btn.dataset.tab === targetTab;
+      btn.setAttribute('aria-selected', isTarget ? 'true' : 'false');
+    });
+    panels.forEach(panel => {
+      const isTarget = panel.id === 'tab-' + targetTab;
+      panel.setAttribute('aria-hidden', isTarget ? 'false' : 'true');
+    });
+  }
+
+  navButtons.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+
+    /* Keyboard arrow navigation between tabs */
+    btn.addEventListener('keydown', e => {
+      const allBtns = [...navButtons];
+      const idx     = allBtns.indexOf(btn);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        allBtns[(idx + 1) % allBtns.length].focus();
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        allBtns[(idx - 1 + allBtns.length) % allBtns.length].focus();
+      }
+    });
+  });
+})();
+
+/* ── Clipboard helper ─────────────────────────────────── */
+function copyToClipboard(text, buttonEl) {
+  navigator.clipboard.writeText(text).then(() => {
+    const original = buttonEl.textContent;
+    buttonEl.textContent = 'Copied!';
+    setTimeout(() => { buttonEl.textContent = original; }, 1500);
+  });
+}
+
+/* ── Password analyser ────────────────────────────────── */
+(function initPasswordAnalyser() {
+  const COMMON_PASSWORDS = new Set([
+    'password','123456','qwerty','letmein','admin','welcome','monkey',
+    'dragon','master','sunshine','password1','abc123','iloveyou',
+    'princess','trustno1','baseball','football','soccer','batman',
+    'superman','shadow','pass','hello','whatever'
+  ]);
+
+  const pwInput    = document.getElementById('pw-input');
+  const fillEl     = document.getElementById('strength-fill');
+  const wordEl     = document.getElementById('strength-word');
+  const pctEl      = document.getElementById('strength-pct');
+  const feedbackEl = document.getElementById('pw-feedback');
+  const feedbackTx = document.getElementById('pw-feedback-text');
+  const srDesc     = document.getElementById('pw-strength-desc');
+
+  const CHECK_IDS = ['ck-len','ck-upper','ck-lower','ck-num','ck-sym','ck-seq','ck-rep','ck-com'];
+
+  function setCheck(id, pass) {
+    const el   = document.getElementById(id);
+    const icon = el.querySelector('.check-icon');
+    el.classList.toggle('pass', pass);
+    icon.textContent = pass ? '✓' : '';
+    el.setAttribute('aria-label', el.textContent.trim() + (pass ? ' — passed' : ' — not met'));
+  }
+
+  function formatTime(s) {
+    if (s < 1)          return '<1s';
+    if (s < 60)         return Math.round(s) + 's';
+    if (s < 3600)       return Math.round(s / 60) + 'min';
+    if (s < 86400)      return Math.round(s / 3600) + 'hr';
+    if (s < 2592000)    return Math.round(s / 86400) + 'd';
+    if (s < 31536000)   return Math.round(s / 2592000) + 'mo';
+    if (s < 3.15e10)    return Math.round(s / 31536000) + 'yr';
+    if (s < 3.15e13)    return Math.round(s / 3.15e10) + 'kyr';
+    return 'centuries';
+  }
+
+  function reset() {
+    CHECK_IDS.forEach(id => setCheck(id, false));
+    fillEl.style.width      = '0';
+    wordEl.textContent      = '——';
+    wordEl.style.color      = 'var(--star-ghost)';
+    pctEl.textContent       = '';
+    feedbackEl.classList.remove('show');
+    document.getElementById('stat-entropy').textContent  = '0';
+    document.getElementById('stat-length').textContent   = '0';
+    document.getElementById('stat-charset').textContent  = '0';
+    document.getElementById('stat-crack').textContent    = '——';
+
+    const bar = document.querySelector('.strength-track');
+    bar.setAttribute('aria-valuenow', '0');
+  }
+
+  function analyse(pw) {
+    if (!pw) { reset(); return; }
+
+    const hasL = /[a-z]/.test(pw),  hasU = /[A-Z]/.test(pw),
+          hasN = /[0-9]/.test(pw),  hasS = /[^a-zA-Z0-9]/.test(pw);
+
+    let cs = 0;
+    if (hasL) cs += 26; if (hasU) cs += 26;
+    if (hasN) cs += 10; if (hasS) cs += 32;
+
+    const entropy   = cs > 0 ? Math.round(pw.length * Math.log2(cs)) : 0;
+    const crackTime = formatTime(Math.pow(cs, pw.length) / 1e10);
+
+    const longOk  = pw.length >= 12;
+    const noSeq   = !/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789)/i.test(pw);
+    const noRep   = !/(.)\1{2,}/.test(pw);
+    const notCom  = !COMMON_PASSWORDS.has(pw.toLowerCase());
+
+    setCheck('ck-len',   longOk);
+    setCheck('ck-upper', hasU);
+    setCheck('ck-lower', hasL);
+    setCheck('ck-num',   hasN);
+    setCheck('ck-sym',   hasS);
+    setCheck('ck-seq',   noSeq);
+    setCheck('ck-rep',   noRep);
+    setCheck('ck-com',   notCom);
+
+    document.getElementById('stat-entropy').textContent  = entropy;
+    document.getElementById('stat-length').textContent   = pw.length;
+    document.getElementById('stat-charset').textContent  = cs;
+    document.getElementById('stat-crack').textContent    = crackTime;
+
+    let score = 0;
+    if (longOk) score += 20; if (hasU) score += 12; if (hasL) score += 12;
+    if (hasN)   score += 13; if (hasS) score += 18; if (noSeq) score += 8;
+    if (noRep)  score +=  8; if (notCom) score += 9;
+    if (entropy >= 60)   score = Math.min(100, score + 8);
+    if (pw.length >= 20) score = Math.min(100, score + 10);
+
+    const bar = document.querySelector('.strength-track');
+    bar.setAttribute('aria-valuenow', score);
+
+    let colour, label;
+    if      (score < 30) { colour = '#d45252'; label = 'Critical'; }
+    else if (score < 50) { colour = '#c4823a'; label = 'Weak'; }
+    else if (score < 68) { colour = '#f5c842'; label = 'Moderate'; }
+    else if (score < 84) { colour = '#38c4d4'; label = 'Strong'; }
+    else                 { colour = '#7be87b'; label = 'Excellent'; }
+
+    fillEl.style.width      = score + '%';
+    fillEl.style.background = colour;
+    fillEl.style.boxShadow  = `0 0 8px ${colour}`;
+    wordEl.style.color      = colour;
+    wordEl.textContent      = label;
+    pctEl.textContent       = score + '%';
+
+    const tips = [];
+    if (!longOk)           tips.push('Use at least 12 characters — each extra character multiplies crack time exponentially');
+    if (!hasU || !hasL)    tips.push('Mix upper and lowercase to increase the effective charset');
+    if (!hasN)             tips.push('Add numbers to expand the keyspace');
+    if (!hasS)             tips.push('Special characters (!, @, #…) significantly boost entropy');
+    if (!noSeq)            tips.push('Avoid predictable sequences like "abc" or "123"');
+    if (!noRep)            tips.push('Repeated characters reduce effective entropy');
+    if (!notCom)           tips.push('This password appears in common password dictionaries — change it immediately');
+
+    feedbackEl.classList.add('show');
+    feedbackTx.innerHTML = tips.length
+      ? tips.map(t => `<span style="color:var(--gold-dim);margin-right:6px" aria-hidden="true">›</span>${t}`).join('<br>')
+      : `<span style="color:var(--teal)" aria-hidden="true">›</span> Strong password — high entropy, diverse charset, no common patterns detected.`;
+
+    srDesc.textContent = `Password strength: ${label}, ${score}%. Entropy: ${entropy} bits.`;
+  }
+
+  pwInput.addEventListener('input', e => analyse(e.target.value));
+})();
+
+/* ── Hash generator ───────────────────────────────────── */
+(function initHashGenerator() {
+  const inputEl  = document.getElementById('hash-input');
+  const outputEl = document.getElementById('hash-output');
+  const rowsEl   = document.getElementById('hash-rows');
+
+  function buf2hex(buf) {
+    return Array.from(new Uint8Array(buf))
+      .map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function buildRow(algo, value, isSecure) {
+    const row   = document.createElement('div');
+    row.className = 'hash-row';
+    row.setAttribute('role', 'listitem');
+
+    const algoEl  = document.createElement('span');
+    algoEl.className = 'hash-algorithm';
+
+    const name    = document.createElement('span');
+    name.textContent = algo;
+
+    const badge   = document.createElement('span');
+    badge.className  = 'algo-badge ' + (isSecure ? 'badge-secure' : 'badge-broken');
+    badge.textContent = isSecure ? 'Secure' : 'Broken';
+
+    algoEl.appendChild(name);
+    algoEl.appendChild(badge);
+
+    const valEl  = document.createElement('span');
+    valEl.className = 'hash-value';
+    valEl.textContent = value;
+    valEl.setAttribute('aria-label', `${algo} hash: ${value}`);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className   = 'hash-copy-btn';
+    copyBtn.textContent = 'Copy';
+    copyBtn.setAttribute('aria-label', `Copy ${algo} hash`);
+    copyBtn.addEventListener('click', () => copyToClipboard(value, copyBtn));
+
+    row.appendChild(algoEl);
+    row.appendChild(valEl);
+    row.appendChild(copyBtn);
+    return row;
+  }
+
+  async function generate() {
+    const text = inputEl.value;
+    if (!text) return;
+
+    const enc  = new TextEncoder();
+    const data = enc.encode(text);
+
+    const [s256buf, s1buf] = await Promise.all([
+      crypto.subtle.digest('SHA-256', data),
+      crypto.subtle.digest('SHA-1',   data)
+    ]);
+
+    rowsEl.innerHTML = '';
+    rowsEl.appendChild(buildRow('MD5',    md5(text),       false));
+    rowsEl.appendChild(buildRow('SHA-1',  buf2hex(s1buf),  false));
+    rowsEl.appendChild(buildRow('SHA-256',buf2hex(s256buf),true));
+
+    outputEl.removeAttribute('hidden');
+  }
+
+  function clear() {
+    inputEl.value = '';
+    outputEl.setAttribute('hidden','');
+    rowsEl.innerHTML = '';
+  }
+
+  document.getElementById('btn-hash').addEventListener('click', generate);
+  document.getElementById('btn-hash-clear').addEventListener('click', clear);
+})();
+
+/* ── Caesar cipher ────────────────────────────────────── */
+(function initCipher() {
+  const inputEl  = document.getElementById('cipher-input');
+  const shiftEl  = document.getElementById('cipher-shift');
+  const outputEl = document.getElementById('cipher-output');
+  const copyBtn  = document.getElementById('btn-copy-cipher');
+
+  function run(mode) {
+    const text  = inputEl.value;
+    let shift   = parseInt(shiftEl.value) || 13;
+    if (mode === 'dec') shift = 26 - (shift % 26);
+    const result = text.replace(/[a-zA-Z]/g, c => {
+      const base = c < 'a' ? 65 : 97;
+      return String.fromCharCode((c.charCodeAt(0) - base + shift) % 26 + base);
+    });
+    outputEl.textContent = result || '——';
+  }
+
+  document.getElementById('btn-cipher-enc').addEventListener('click', () => run('enc'));
+  document.getElementById('btn-cipher-dec').addEventListener('click', () => run('dec'));
+  document.getElementById('btn-rot13').addEventListener('click', () => {
+    shiftEl.value = 13;
+    run('enc');
+  });
+
+  copyBtn.addEventListener('click', () => copyToClipboard(outputEl.textContent, copyBtn));
+})();
+
+/* ── Encoding suite ───────────────────────────────────── */
+(function initEncoder() {
+  const inputEl  = document.getElementById('encode-input');
+  const typeEl   = document.getElementById('encode-type');
+  const outputEl = document.getElementById('encode-output');
+  const copyBtn  = document.getElementById('btn-copy-encode');
+
+  function convert() {
+    const input = inputEl.value;
+    const type  = typeEl.value;
+    let result  = '';
+
+    try {
+      switch (type) {
+        case 'b64e':  result = btoa(unescape(encodeURIComponent(input))); break;
+        case 'b64d':  result = decodeURIComponent(escape(atob(input))); break;
+        case 'urle':  result = encodeURIComponent(input); break;
+        case 'urld':  result = decodeURIComponent(input); break;
+        case 'hex':   result = Array.from(input).map(c => c.charCodeAt(0).toString(16).padStart(2,'0')).join(' '); break;
+        case 'unhex': result = (input.replace(/\s/g,'').match(/.{2}/g) || []).map(h => String.fromCharCode(parseInt(h,16))).join(''); break;
+        case 'bin':   result = Array.from(input).map(c => c.charCodeAt(0).toString(2).padStart(8,'0')).join(' '); break;
+        case 'unbin': result = input.trim().split(/\s+/).map(b => String.fromCharCode(parseInt(b,2))).join(''); break;
+        case 'ascii': result = Array.from(input).map(c => `${c}:${c.charCodeAt(0)}`).join('   '); break;
+      }
+    } catch (e) {
+      result = 'Error: ' + e.message;
+    }
+
+    outputEl.textContent = result || '(empty result)';
+  }
+
+  function swapInputOutput() {
+    const out = outputEl.textContent;
+    if (out !== '——' && out !== '(empty result)') {
+      inputEl.value = out;
+      outputEl.textContent = '——';
+    }
+  }
+
+  document.getElementById('btn-encode').addEventListener('click', convert);
+  document.getElementById('btn-swap-io').addEventListener('click', swapInputOutput);
+  copyBtn.addEventListener('click', () => copyToClipboard(outputEl.textContent, copyBtn));
+})();
+
+/* ── URL auditor ──────────────────────────────────────── */
+(function initURLAuditor() {
+  const inputEl      = document.getElementById('url-input');
+  const resultsEl    = document.getElementById('url-results');
+  const parsedGridEl = document.getElementById('url-parsed-grid');
+  const flagsListEl  = document.getElementById('url-flags-list');
+
+  const RISKY_TLDS = ['.tk','.ml','.ga','.cf','.gq','.xyz','.top','.click','.work'];
+
+  function urlCell(key, value) {
+    const cell     = document.createElement('div');
+    cell.className = 'url-cell';
+    cell.setAttribute('role', 'listitem');
+    cell.innerHTML = `<p class="url-cell-key">${key}</p><p class="url-cell-val">${value || '——'}</p>`;
+    return cell;
+  }
+
+  function flagItem(kind, icon, title, desc) {
+    const item    = document.createElement('div');
+    item.className = `flag-item ${kind}`;
+    item.setAttribute('role', 'listitem');
+    item.setAttribute('aria-label', `${kind === 'ok' ? 'Pass' : kind === 'warn' ? 'Warning' : 'Fail'}: ${title}`);
+    item.innerHTML = `
+      <span class="flag-icon" aria-hidden="true">${icon}</span>
+      <div>
+        <p class="flag-title">${title}</p>
+        <p class="flag-desc">${desc}</p>
+      </div>`;
+    return item;
+  }
+
+  function audit() {
+    const raw = inputEl.value.trim();
+    if (!raw) return;
+
+    let parsed;
+    try {
+      parsed = new URL(raw.startsWith('http') ? raw : 'https://' + raw);
+    } catch {
+      return;
+    }
+
+    const params = [...parsed.searchParams.entries()];
+    parsedGridEl.innerHTML = '';
+    flagsListEl.innerHTML  = '';
+
+    parsedGridEl.appendChild(urlCell('Protocol', parsed.protocol.replace(':','')));
+    parsedGridEl.appendChild(urlCell('Hostname',  parsed.hostname));
+    parsedGridEl.appendChild(urlCell('Path',      parsed.pathname || '/'));
+    parsedGridEl.appendChild(urlCell('Params',    params.length ? params.map(([k,v]) => `${k}=${v}`).join(', ') : 'none'));
+
+    // Protocol
+    if (parsed.protocol === 'http:')
+      flagsListEl.appendChild(flagItem('bad','⚠','Unencrypted HTTP','Traffic is cleartext and vulnerable to interception. Always prefer HTTPS.'));
+    else
+      flagsListEl.appendChild(flagItem('ok','✓','HTTPS — Encrypted','TLS/SSL is in use. Traffic is encrypted in transit.'));
+
+    // Risky TLD
+    if (RISKY_TLDS.some(t => parsed.hostname.endsWith(t)))
+      flagsListEl.appendChild(flagItem('warn','⚠','High-Risk TLD',
+        `".${parsed.hostname.split('.').pop()}" is frequently used in phishing campaigns.`));
+
+    // Homograph
+    if (/[013456789]/.test(parsed.hostname) && /[a-z]{3,}/.test(parsed.hostname))
+      flagsListEl.appendChild(flagItem('warn','⚠','Possible Lookalike Domain',
+        'Hostname mixes letters and digits that may resemble similar characters (homograph attack).'));
+
+    // Raw IP
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(parsed.hostname))
+      flagsListEl.appendChild(flagItem('warn','⚠','Raw IP Address',
+        'Legitimate services rarely serve content directly from IP addresses.'));
+
+    // Open redirect
+    const rp = params.filter(([k]) => /redirect|url|next|return|goto|dest|forward/i.test(k));
+    if (rp.length)
+      flagsListEl.appendChild(flagItem('warn','⚠','Open Redirect Parameter',
+        `"${rp[0][0]}" may allow redirecting users to attacker-controlled sites.`));
+
+    // Dangerous param names
+    const ep = params.filter(([k]) => /exec|cmd|eval|run|shell|system|inject|query|sql/i.test(k));
+    if (ep.length)
+      flagsListEl.appendChild(flagItem('bad','✗','Dangerous Parameter Name',
+        `"${ep[0][0]}" resembles common injection or code-execution parameter names.`));
+
+    // Long query string
+    if (parsed.search.length > 200)
+      flagsListEl.appendChild(flagItem('warn','⚠','Very Long Query String',
+        `${parsed.search.length} characters — may indicate encoded payloads.`));
+
+    // Subdomain depth
+    const subCount = parsed.hostname.split('.').length - 2;
+    if (subCount > 2)
+      flagsListEl.appendChild(flagItem('warn','⚠','Deep Subdomain Nesting',
+        `${subCount} subdomain levels — a common technique to create misleading URLs.`));
+
+    resultsEl.removeAttribute('hidden');
+  }
+
+  function loadSample(type) {
+    inputEl.value = type === 'safe'
+      ? 'https://github.com/torvalds/linux?tab=readme'
+      : 'http://g00gle-security-verify.tk/login?redirect=https://evil.com&exec=cmd&token=abc';
+    audit();
+  }
+
+  document.getElementById('btn-audit-url').addEventListener('click', audit);
+  document.getElementById('btn-sample-safe').addEventListener('click', () => loadSample('safe'));
+  document.getElementById('btn-sample-sus').addEventListener('click',  () => loadSample('sus'));
+})();
+
+/* ── MD5 implementation (educational purposes only) ───── */
+function md5(str) {
+  function sa(x,y){const l=(x&65535)+(y&65535);return(((x>>16)+(y>>16)+(l>>16))<<16)|(l&65535)}
+  function rl(n,c){return(n<<c)|(n>>>(32-c))}
+  function cm(q,a,b,x,s,t){return sa(rl(sa(sa(a,q),sa(x,t)),s),b)}
+  function ff(a,b,c,d,x,s,t){return cm((b&c)|((~b)&d),a,b,x,s,t)}
+  function gg(a,b,c,d,x,s,t){return cm((b&d)|(c&(~d)),a,b,x,s,t)}
+  function hh(a,b,c,d,x,s,t){return cm(b^c^d,a,b,x,s,t)}
+  function ii(a,b,c,d,x,s,t){return cm(c^(b|(~d)),a,b,x,s,t)}
+  function blk(s){const b=[];for(let i=0;i<s.length*32;i+=8)b[i>>5]|=(s.charCodeAt(i/8)&255)<<i%32;b[s.length*8>>5]|=128<<s.length*8%32;b[(((s.length*8+64)>>>9)<<4)+14]=s.length*8;return b}
+  const x=blk(str);let a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+  for(let i=0;i<x.length;i+=16){
+    const oa=a,ob=b,oc=c,od=d;
+    a=ff(a,b,c,d,x[i],7,-680876936);d=ff(d,a,b,c,x[i+1],12,-389564586);c=ff(c,d,a,b,x[i+2],17,606105819);b=ff(b,c,d,a,x[i+3],22,-1044525330);
+    a=ff(a,b,c,d,x[i+4],7,-176418897);d=ff(d,a,b,c,x[i+5],12,1200080426);c=ff(c,d,a,b,x[i+6],17,-1473231341);b=ff(b,c,d,a,x[i+7],22,-45705983);
+    a=ff(a,b,c,d,x[i+8],7,1770035416);d=ff(d,a,b,c,x[i+9],12,-1958414417);c=ff(c,d,a,b,x[i+10],17,-42063);b=ff(b,c,d,a,x[i+11],22,-1990404162);
+    a=ff(a,b,c,d,x[i+12],7,1804603682);d=ff(d,a,b,c,x[i+13],12,-40341101);c=ff(c,d,a,b,x[i+14],17,-1502002290);b=ff(b,c,d,a,x[i+15],22,1236535329);
+    a=gg(a,b,c,d,x[i+1],5,-165796510);d=gg(d,a,b,c,x[i+6],9,-1069501632);c=gg(c,d,a,b,x[i+11],14,643717713);b=gg(b,c,d,a,x[i],20,-373897302);
+    a=gg(a,b,c,d,x[i+5],5,-701558691);d=gg(d,a,b,c,x[i+10],9,38016083);c=gg(c,d,a,b,x[i+15],14,-660478335);b=gg(b,c,d,a,x[i+4],20,-405537848);
+    a=gg(a,b,c,d,x[i+9],5,568446438);d=gg(d,a,b,c,x[i+14],9,-1019803690);c=gg(c,d,a,b,x[i+3],14,-187363961);b=gg(b,c,d,a,x[i+8],20,1163531501);
+    a=gg(a,b,c,d,x[i+13],5,-1444681467);d=gg(d,a,b,c,x[i+2],9,-51403784);c=gg(c,d,a,b,x[i+7],14,1735328473);b=gg(b,c,d,a,x[i+12],20,-1926607734);
+    a=hh(a,b,c,d,x[i+5],4,-378558);d=hh(d,a,b,c,x[i+8],11,-2022574463);c=hh(c,d,a,b,x[i+11],16,1839030562);b=hh(b,c,d,a,x[i+14],23,-35309556);
+    a=hh(a,b,c,d,x[i+1],4,-1530992060);d=hh(d,a,b,c,x[i+4],11,1272893353);c=hh(c,d,a,b,x[i+7],16,-155497632);b=hh(b,c,d,a,x[i+10],23,-1094730640);
+    a=hh(a,b,c,d,x[i+13],4,681279174);d=hh(d,a,b,c,x[i],11,-358537222);c=hh(c,d,a,b,x[i+3],16,-722521979);b=hh(b,c,d,a,x[i+6],23,76029189);
+    a=hh(a,b,c,d,x[i+9],4,-640364487);d=hh(d,a,b,c,x[i+12],11,-421815835);c=hh(c,d,a,b,x[i+15],16,530742520);b=hh(b,c,d,a,x[i+2],23,-995338651);
+    a=ii(a,b,c,d,x[i],6,-198630844);d=ii(d,a,b,c,x[i+7],10,1126891415);c=ii(c,d,a,b,x[i+14],15,-1416354905);b=ii(b,c,d,a,x[i+5],21,-57434055);
+    a=ii(a,b,c,d,x[i+12],6,1700485571);d=ii(d,a,b,c,x[i+3],10,-1894986606);c=ii(c,d,a,b,x[i+10],15,-1051523);b=ii(b,c,d,a,x[i+1],21,-2054922799);
+    a=ii(a,b,c,d,x[i+8],6,1873313359);d=ii(d,a,b,c,x[i+15],10,-30611744);c=ii(c,d,a,b,x[i+6],15,-1560198380);b=ii(b,c,d,a,x[i+13],21,1309151649);
+    a=ii(a,b,c,d,x[i+4],6,-145523070);d=ii(d,a,b,c,x[i+11],10,-1120210379);c=ii(c,d,a,b,x[i+2],15,718787259);b=ii(b,c,d,a,x[i+9],21,-343485551);
+    a=sa(a,oa);b=sa(b,ob);c=sa(c,oc);d=sa(d,od);
+  }
+  return [a,b,c,d].map(n => (n<0?n+0x100000000:n).toString(16).padStart(8,'0').match(/.{2}/g).reverse().join('')).join('');
+}
+</script>
+</body>
+</html>
